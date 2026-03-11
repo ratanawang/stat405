@@ -1,0 +1,121 @@
+---
+title: "STAT 405 Project EDA"
+output:
+  pdf_document: default
+  html_document: default
+date: "2026-03-11"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+setwd("C:/Users/victo/OneDrive - UBC/Academics/2025W2/STAT 405/Project")
+```
+
+
+```{r}
+library(dplyr)
+# load in the 2018-2022 dataset
+# the file was originally named "British Columbia_Full Data_data.csv" 
+# (for both the 2018-22 and 2020-24 datasets)
+crash18_raw <- read.csv("icbc_crashes_2018_2022.csv", sep="\t", header=TRUE, fileEncoding="utf-16")
+crash18 <- crash18_raw
+
+```
+
+```{r}
+# change the month from words to numbers
+month_names <- c("JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE",
+                 "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER")
+
+crash18$month <- match(crash18$Month.Of.Year, month_names)
+crash18$year <- crash18$Date.Of.Loss.Year + (crash18$month - 1) / 12
+
+head(crash18)
+
+```
+
+
+```{r}
+# view crashes only in the City of Vancouver
+
+crash18_cov <- filter(crash18, Crash.Breakdown.2 == "VANCOUVER")
+
+head(crash18_cov)
+
+
+
+```
+
+
+```{r}
+# load in the 2020-2024 crash dataset
+crash20_raw <- read.csv("icbc_crashes_2020_2024.csv", header=TRUE)
+crash20 <- crash20_raw
+
+```
+
+
+```{r}
+crash20$month <- match(crash20$Month.Of.Year, month_names)
+crash20$year <- crash20$Date.Of.Loss.Year + (crash20$month - 1) / 12
+
+head(crash20)
+
+```
+
+
+```{r}
+# filter out 2020-2022 crashes so only 2023-2024 crashes remain
+# so we can then combine the two datasets to have 2018-2024 data
+
+crash23 <- crash20 |> filter(year >= 2023)
+head(crash23)
+
+# rename columns in crash18 to match those in crash23
+crash18 <- crash18|> rename(Animal.Flag = Animal.Involved,
+                            Cyclist.Flag = Cyclist.Involved,
+                            Heavy.Veh.Flag = Heavy.Veh.Involved,
+                            Motorcycle.Flag = Motorcycle.Involved,
+                            Parked.Vehicle.Flag = Parked.Vehicle.Involved,
+                            Parking.Lot.Flag = Parking.Lot.Crash,
+                            Pedestrian.Flag = Pedestrian.Involved)
+
+```
+
+
+```{r}
+# combine the crash18 and crash23 data frames
+
+crash <- bind_rows(crash18, crash23)
+
+head(crash)
+
+tail(crash)
+
+
+``` 
+
+```{r}
+# crashes per year
+crash_yearly <- crash |> count(Date.Of.Loss.Year)
+
+crash_yearly
+
+plot(crash_yearly$Date.Of.Loss.Year, crash_yearly$n, type="l")
+plot(crash_yearly$Date.Of.Loss.Year, crash_yearly$n)
+
+
+```
+
+
+```{r}
+# crashes per month, to see if there is seasonality
+crash_monthly <- crash |> count(year)
+
+head(crash_monthly)
+
+
+plot(crash_monthly$year, crash_monthly$n, type="l")
+plot(crash_monthly$year, crash_monthly$n)
+
+```
