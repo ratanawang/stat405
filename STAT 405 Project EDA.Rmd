@@ -1,0 +1,248 @@
+---
+title: "STAT 405 Project EDA"
+output:
+  pdf_document: default
+  html_document: default
+date: "2026-03-11"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+setwd("C:/Users/victo/OneDrive - UBC/Academics/2025W2/STAT 405/Project")
+```
+
+
+```{r}
+suppressPackageStartupMessages(library(dplyr))
+# load in the 2018-2022 dataset
+# the file was originally named "British Columbia_Full Data_data.csv" 
+# (for both the 2018-22 and 2020-24 datasets)
+crash18_raw <- read.csv("icbc_crashes_2018_2022.csv", sep="\t", header=TRUE, fileEncoding="utf-16")
+crash18 <- crash18_raw |> rename(Derived.Crash.Configuration = Derived.Crash.Congifuration)
+
+```
+
+```{r}
+# change the month from words to numbers
+month_names <- c("JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE",
+                 "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER")
+
+crash18$month <- match(crash18$Month.Of.Year, month_names)
+crash18$yearmonth <- crash18$Date.Of.Loss.Year + (crash18$month - 1) / 12
+
+head(crash18)
+
+```
+
+
+```{r}
+# load in the 2020-2024 crash dataset
+crash20_raw <- read.csv("icbc_crashes_2020_2024.csv", header=TRUE)
+crash20 <- crash20_raw
+
+```
+
+
+```{r}
+crash20$month <- match(crash20$Month.Of.Year, month_names)
+crash20$yearmonth <- crash20$Date.Of.Loss.Year + (crash20$month - 1) / 12
+
+head(crash20)
+
+```
+
+
+```{r}
+# filter out 2020-2022 crashes so only 2023-2024 crashes remain
+# so we can then combine the two datasets to have 2018-2024 data
+
+crash23 <- crash20 |> filter(yearmonth >= 2023)
+
+# rename columns in crash18 to match those in crash23
+crash18 <- crash18|> rename(Animal.Flag = Animal.Involved,
+                            Cyclist.Flag = Cyclist.Involved,
+                            Heavy.Veh.Flag = Heavy.Veh.Involved,
+                            Motorcycle.Flag = Motorcycle.Involved,
+                            Parked.Vehicle.Flag = Parked.Vehicle.Involved,
+                            Parking.Lot.Flag = Parking.Lot.Crash,
+                            Pedestrian.Flag = Pedestrian.Involved)
+
+```
+
+\newpage
+
+```{r}
+# combine the crash18 and crash23 data frames
+crash <- bind_rows(crash18, crash23)
+head(crash)
+``` 
+\newpage
+
+```{r}
+# view crashes only in the City of Vancouver, with known latitude/longitude
+# and remove some unnecessary rows
+
+crash_cov <- crash |>
+  filter(Municipality.Name == "VANCOUVER") |>
+  filter(!is.na(Latitude) & !is.na(Longitude)) |>
+  select(-Crash.Breakdown.2, -Region, -Animal.Flag, -Month.Of.Year, -Metric.Selector,
+         -Municipality.Name..ifnull., -Municipality.With.Boundary, -month)
+
+head(crash_cov)
+
+```
+
+\newpage
+```{r}
+# crashes per year in city of Vancouver
+crash_yearly <- crash_cov |> count(Date.Of.Loss.Year)
+crash_yearly
+
+plot(crash_yearly, type="o", main="Crashes per year (City of Vancouver)")
+
+
+```
+\newpage
+
+```{r}
+# crashes per month in City of Vancouver, to see if there is seasonality
+crash_monthly <- crash_cov |> count(yearmonth)
+
+plot(crash_monthly, type="o", main="Crashes per month (City of Vancouver)")
+
+```
+
+\newpage
+
+```{r}
+# trends of pedestrian-involved crashes in the city of Vancouver
+crash_yearly_ped <- crash_cov |>
+  filter(Pedestrian.Flag=="Yes") |>
+  count(Date.Of.Loss.Year)
+
+plot(crash_yearly_ped, type="o", 
+     main="Pedestrian-involved crashes per year (City of Vancouver)")
+```
+
+\newpage
+```{r}
+crash_monthly_ped <- crash_cov |>
+  filter(Pedestrian.Flag=="Yes") |>
+  count(yearmonth)
+
+plot(crash_monthly_ped, type="o",
+     main="Pedestrian-involved crashes per month (City of Vancouver)")
+```
+
+\newpage
+```{r} 
+# weather data
+weather18 <- read.csv("yvr_weather_2018.csv", header=TRUE)
+weather19 <- read.csv("yvr_weather_2019.csv", header=TRUE)
+weather20 <- read.csv("yvr_weather_2020.csv", header=TRUE)
+weather21 <- read.csv("yvr_weather_2021.csv", header=TRUE)
+weather22 <- read.csv("yvr_weather_2022.csv", header=TRUE)
+weather23 <- read.csv("yvr_weather_2023.csv", header=TRUE)
+weather24 <- read.csv("yvr_weather_2024.csv", header=TRUE)
+
+weather_dfs <- list(y2018 = weather18, 
+                    y2019 = weather19, 
+                    y2020 = weather20, 
+                    y2021 = weather21,
+                    y2022 = weather22, 
+                    y2023 = weather23, 
+                    y2024 = weather24)
+```
+
+```{r}
+# select columns to keep and create a "yearmonth" column for easier plotting/EDA
+# weather[1] is 2018 data, weather[2] is 2019, ... , weather[7] is 2024
+
+for (i in 1:length(weather_dfs)) {
+  weather_dfs[[i]] <- weather_dfs[[i]] |>
+    select(Date.Time, Year, Month, Day, Max.Temp...C., Min.Temp...C., Mean.Temp...C.,
+           Total.Rain..mm., Total.Snow..cm., Total.Precip..mm., Snow.on.Grnd..cm., 
+           Dir.of.Max.Gust..10s.deg., Spd.of.Max.Gust..km.h.) |>
+    mutate(Spd.of.Max.Gust..km.h. = as.integer(Spd.of.Max.Gust..km.h.),
+           yearmonth = Year + (Month - 1) / 12)
+}
+
+# all weather from 2018 to 2024
+weather <- bind_rows(weather_dfs)
+
+head(weather)
+
+
+```
+
+\newpage
+
+```{r}
+# plot precipitation/temperatures by month
+
+weather_monthly <- weather |>
+  group_by(yearmonth) |>
+  summarize(monthly_rain_mm = sum(Total.Rain..mm., na.rm=TRUE),
+            monthly_snow_cm = sum(Total.Snow..cm., na.rm=TRUE),
+            monthly_precip_mm = sum(Total.Precip..mm., na.rm=TRUE),
+            avg_max_temp_c = mean(Max.Temp...C., na.rm=TRUE),
+            avg_min_temp_c = mean(Min.Temp...C., na.rm=TRUE),
+            avg_mean_temp_c = mean(Mean.Temp...C., na.rm=TRUE))
+
+head(weather_monthly)
+```
+
+\newpage
+```{r}
+plot(weather_monthly$yearmonth, weather_monthly$monthly_rain_mm, type="o",
+     xlab="year", ylab="total monthly rain (mm)",
+     main="Total rain per month (Vancouver Int'l Airport)")
+```
+
+\newpage
+```{r}
+plot(weather_monthly$yearmonth, weather_monthly$monthly_snow_cm, type="o",
+     xlab="year", ylab="total monthly snow (cm)",
+     main="Total snow per month (Vancouver Int'l Airport)")
+```
+
+\newpage
+```{r}
+plot(weather_monthly$yearmonth, weather_monthly$monthly_precip_mm, type="o",
+     xlab="year", ylab="total monthly precipitation (mm)",
+     main="Total precipitation per month (Vancouver Int'l Airport)")
+```
+
+\newpage
+```{r}
+plot(weather_monthly$yearmonth, weather_monthly$avg_max_temp_c, type="o",
+     xlab="year", ylab="average max temperature (deg C)",
+     main="Average max temperature by month (Vancouver Int'l Airport)")
+```
+
+\newpage
+```{r}
+plot(weather_monthly$yearmonth, weather_monthly$avg_min_temp_c, type="o",
+     xlab="year", ylab="average min temperature (deg C)",
+     main="Average min temperature by month (Vancouver Int'l Airport)")
+```
+
+\newpage
+```{r}
+
+plot(weather_monthly$yearmonth, weather_monthly$avg_mean_temp_c, type="o",
+     xlab="year", ylab="average mean temperature (deg C)",
+     main="Average mean temperature by month (Vancouver Int'l Airport)")
+```
+\newpage
+
+```{r}
+# backup dataset
+
+crash_chicago <- read.csv("chicago_crashes.csv", header=TRUE)
+
+crash_chicago <- crash_chicago |>
+  select(-CRASH_RECORD_ID, -RD_NO, -CRASH_DATE_EST_I, -LOCATION)
+
+head(crash_chicago)
+```
