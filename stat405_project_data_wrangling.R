@@ -58,7 +58,14 @@ crash_cov <- crash |>
   filter(Municipality.Name == "VANCOUVER") |>
   filter(!is.na(Latitude) & !is.na(Longitude)) |>
   select(-Crash.Breakdown.2, -Region, -Animal.Flag, -Month.Of.Year, -Metric.Selector,
-         -Municipality.Name..ifnull., -Municipality.With.Boundary, -month)
+         -Municipality.Name..ifnull., -Municipality.With.Boundary, -month) |>
+  mutate(Cyclist.Flag = if_else(Cyclist.Flag == "Yes", 1, 0),
+         Heavy.Veh.Flag = if_else(Heavy.Veh.Flag == "Yes", 1, 0),
+         Intersection.Crash = if_else(Intersection.Crash == "Yes", 1, 0),
+         Motorcycle.Flag = if_else(Motorcycle.Flag == "Yes", 1, 0),
+         Parked.Vehicle.Flag = if_else(Parked.Vehicle.Flag == "Yes", 1, 0),
+         Parking.Lot.Flag = if_else(Parking.Lot.Flag == "Yes", 1, 0),
+         Pedestrian.Flag = if_else(Pedestrian.Flag == "Yes", 1, 0))
 
 head(crash_cov)
 
@@ -88,8 +95,7 @@ weather_dfs <- list(y2018 = weather18,
 for (i in 1:length(weather_dfs)) {
   weather_dfs[[i]] <- weather_dfs[[i]] |>
     select(Date.Time, Year, Month, Day, Max.Temp...C., Min.Temp...C., Mean.Temp...C.,
-           Total.Rain..mm., Total.Snow..cm., Total.Precip..mm., Snow.on.Grnd..cm., 
-           Dir.of.Max.Gust..10s.deg., Spd.of.Max.Gust..km.h.)
+           Total.Rain..mm., Total.Snow..cm., Total.Precip..mm.)
 }
 
 # all weather from 2018 to 2024
