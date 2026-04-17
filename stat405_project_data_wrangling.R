@@ -2,7 +2,7 @@ suppressPackageStartupMessages(library(dplyr))
 # load in the 2018-2022 dataset
 # the file was originally named "British Columbia_Full Data_data.csv" 
 # (for both the 2018-22 and 2020-24 datasets)
-crash18_raw <- read.csv("icbc_crashes_2018_2022.csv", sep="\t", header=TRUE, fileEncoding="utf-16")
+crash18_raw <- read.csv("data/icbc_crashes_2018_2022.csv", sep="\t", header=TRUE, fileEncoding="utf-16")
 crash18 <- crash18_raw |> rename(Derived.Crash.Configuration = Derived.Crash.Congifuration)
 
 
@@ -18,7 +18,7 @@ head(crash18)
 
 
 # load in the 2020-2024 crash dataset
-crash20_raw <- read.csv("icbc_crashes_2020_2024.csv", header=TRUE)
+crash20_raw <- read.csv("data/icbc_crashes_2020_2024.csv", header=TRUE)
 crash20 <- crash20_raw
 
 
@@ -72,13 +72,13 @@ head(crash_cov)
 
 
 # weather data
-weather18 <- read.csv("yvr_weather_2018.csv", header=TRUE)
-weather19 <- read.csv("yvr_weather_2019.csv", header=TRUE)
-weather20 <- read.csv("yvr_weather_2020.csv", header=TRUE)
-weather21 <- read.csv("yvr_weather_2021.csv", header=TRUE)
-weather22 <- read.csv("yvr_weather_2022.csv", header=TRUE)
-weather23 <- read.csv("yvr_weather_2023.csv", header=TRUE)
-weather24 <- read.csv("yvr_weather_2024.csv", header=TRUE)
+weather18 <- read.csv("data/yvr_weather_2018.csv", header=TRUE)
+weather19 <- read.csv("data/yvr_weather_2019.csv", header=TRUE)
+weather20 <- read.csv("data/yvr_weather_2020.csv", header=TRUE)
+weather21 <- read.csv("data/yvr_weather_2021.csv", header=TRUE)
+weather22 <- read.csv("data/yvr_weather_2022.csv", header=TRUE)
+weather23 <- read.csv("data/yvr_weather_2023.csv", header=TRUE)
+weather24 <- read.csv("data/yvr_weather_2024.csv", header=TRUE)
 
 weather_dfs <- list(y2018 = weather18, 
                     y2019 = weather19, 
