@@ -26,7 +26,7 @@ parameters {
   // real beta_latlon; // interaction between lat/lon
 }
 
-// feel free to adjust the standard deviations of the priors
+
 model {
   beta_0 ~ normal(0, 5);
   beta_t ~ normal(0, 1);
@@ -45,4 +45,3 @@ model {
                       beta_lat*latitude + beta_lon*longitude);// +
                       // beta_latlon*latlon);
 }
-
