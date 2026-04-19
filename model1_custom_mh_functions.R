@@ -34,8 +34,8 @@ custom_mh <- function(y, intersection, weekend, n_iters, beta_0, beta_i, beta_w)
   acceptance_beta_w <- 0
   
   sd_beta_0 <- 0.1
-  sd_beta_i <- 0.1
-  sd_beta_w <- 0.1
+  sd_beta_i <- 0.15
+  sd_beta_w <- 0.15
   
   for (i in 1:n_iters) {
     # kernel 1: propose a new beta_0
