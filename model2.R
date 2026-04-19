@@ -1,5 +1,6 @@
 suppressPackageStartupMessages(library(dplyr))
 suppressPackageStartupMessages(require(cmdstanr))
+suppressPackageStartupMessages(library(bayesplot))
 
 
 # load in the crash_weather data
@@ -73,23 +74,36 @@ model2 <- cmdstan_model("stan/model2.stan")
 
 dir.create(file.path("stan_out"), showWarnings=FALSE)
 
-# fit <- model2$sample(
-#   seed = 1,
-#   chains = 1,
-#   refresh = 500,
-#   data = model2_data,
-#   output_dir = "stan_out"
-# )
+fit_hmc <- model2$sample(
+  seed = 1,
+  chains = 1,
+  refresh = 500,
+  data = model2_data,
+  output_dir = "stan_out"
+)
 
 fit_variational <- model2$variational(
   seed = 1,
   refresh = 500,
   output_dir = "stan_out",
-  algorithm = "meanfield",
-  output_samples = 5000,
+  algorithm = "fullrank",
+  output_samples = 1000,
   data = model2_data
 )
 
-# print(fit$summary())
+print(fit_hmc$summary())
 
 print(fit_variational$summary())
+
+
+hmc_draws <- fit$draws(variables = c("beta_0", "beta_w", "beta_i"))
+
+mcmc_trace(hmc_draws)
+
+hmc_draws2 <- fit$draws(variables = c("beta_snow", "beta_rain"))
+
+mcmc_trace(hmc_draws2)
+
+hmc_draws3 <- fit$draws(variables = c("beta_lat", "beta_lon"))
+
+mcmc_trace(hmc_draws3)
