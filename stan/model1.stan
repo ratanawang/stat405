@@ -23,8 +23,8 @@ model {
   // beta_h ~ normal(0, 2);
   
   
-  y ~ bernoulli_logit(beta_0 + beta_i*intersection + beta_w*weekend + beta_h*heavy);
-  // y ~ bernoulli_logit(beta_0 + beta_i*intersection + beta_w*weekend);
+  // y ~ bernoulli_logit(beta_0 + beta_i*intersection + beta_w*weekend + beta_h*heavy);
+  y ~ bernoulli_logit(beta_0 + beta_i*intersection + beta_w*weekend);
   // y ~ bernoulli_logit(beta_0 + beta_i*intersection);
 }
 
