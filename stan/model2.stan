@@ -10,7 +10,6 @@ data {
   vector[N] avg_rain_mm;
   vector[N] latitude;
   vector[N] longitude;
-  // vector[N] latlon;
 }
 
 
@@ -23,7 +22,6 @@ parameters {
   real beta_rain; // rain effect
   real beta_lat; // latitude effect
   real beta_lon; // longitude effect
-  // real beta_latlon; // interaction between lat/lon
 }
 
 
@@ -36,12 +34,11 @@ model {
   beta_rain ~ normal(0, 3);
   beta_lat ~ normal(0, 2);
   beta_lon ~ normal(0, 2);
-  // beta_latlon ~ normal(0, 2);
   
   
   y ~ bernoulli_logit(beta_0 + time_dummies*beta_t + 
                       beta_i*intersection + beta_w*weekend + 
                       beta_snow*avg_snow_cm + beta_rain*avg_rain_mm +
-                      beta_lat*latitude + beta_lon*longitude);// +
-                      // beta_latlon*latlon);
+                      beta_lat*latitude + beta_lon*longitude);
 }
+
