@@ -5,23 +5,14 @@ suppressPackageStartupMessages(require(cmdstanr))
 # load in the crash_weather data
 # if not already done, run data.R first 
 # which will generate data/crash_weather.csv
-df <- read.csv("data/crash_weather.csv")
-
-
-set.seed(12345)
-
-# randomly keep only 10% of rows in the dataset, to reduce computational load
-
-df_simple <- df |>
-  slice_sample(prop = 0.1)
+df_simple <- read.csv("data/crash_weather.csv")
 
 
 model1_data <- list(
   N = nrow(df_simple),
   y = df_simple$Pedestrian.Flag,
-  intersection = df_simple$Intersection.Crash,
+  intersection = df_simple$centered_intersection,
   weekend = df_simple$weekend
-  #heavy = df_simple$Heavy.Veh.Flag
 )
 
 
@@ -35,11 +26,14 @@ fit_variational <- model1$variational(
   refresh = 500,
   output_dir = "stan_out",
   algorithm = "meanfield",
-  output_samples = 5000,
+  output_samples = 4000,
   data = model1_data
 )
 
-print(fit_variational$summary())
+vi_summary <- fit_variational$summary()
+
+write.csv(vi_summary, "results/model1_vi_summary.csv", row.names=F)
+print(vi_summary)
 
 
 
