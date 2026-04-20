@@ -51,13 +51,16 @@ crash_cov <- crash |>
   filter(!is.na(Latitude) & !is.na(Longitude)) |>
   select(-Crash.Breakdown.2, -Region, -Animal.Flag, -Month.Of.Year, -Metric.Selector,
          -Municipality.Name..ifnull., -Municipality.With.Boundary, -month) |>
-  mutate(Cyclist.Flag = if_else(Cyclist.Flag == "Yes", 1, 0),
-         Heavy.Veh.Flag = if_else(Heavy.Veh.Flag == "Yes", 1, 0),
-         Intersection.Crash = if_else(Intersection.Crash == "Yes", 1, 0),
-         Motorcycle.Flag = if_else(Motorcycle.Flag == "Yes", 1, 0),
-         Parked.Vehicle.Flag = if_else(Parked.Vehicle.Flag == "Yes", 1, 0),
-         Parking.Lot.Flag = if_else(Parking.Lot.Flag == "Yes", 1, 0),
-         Pedestrian.Flag = if_else(Pedestrian.Flag == "Yes", 1, 0))
+  mutate(
+    Cyclist.Flag = if_else(Cyclist.Flag == "Yes", 1, 0),
+    Heavy.Veh.Flag = if_else(Heavy.Veh.Flag == "Yes", 1, 0),
+    Intersection.Crash = if_else(Intersection.Crash == "Yes", 1, 0),
+    Motorcycle.Flag = if_else(Motorcycle.Flag == "Yes", 1, 0),
+    Parked.Vehicle.Flag = if_else(Parked.Vehicle.Flag == "Yes", 1, 0),
+    Parking.Lot.Flag = if_else(Parking.Lot.Flag == "Yes", 1, 0),
+    Pedestrian.Flag = if_else(Pedestrian.Flag == "Yes", 1, 0),
+    weekend = if_else(Day.Of.Week %in% c("SATURDAY", "SUNDAY"), 1, 0)
+  )
 
 head(crash_cov)
 
@@ -114,5 +117,43 @@ crash_weather <- merge(crash_cov, weather_monthly, by="yearmonth") |>
   select(-Date.Of.Loss.Year)
 
 
+
+crash_weather$Time.Category <- as.factor(crash_weather$Time.Category)
+
+# combine some time categories, so that we have fewer parameters in our model
+crash_weather <- crash_weather %>%
+  mutate(timeofday = case_when(
+    Time.Category %in% c("00:00-02:59", "03:00-05:59") ~ "Late Night",
+    Time.Category %in% c("06:00-08:59") ~ "Morning Rush",
+    Time.Category %in% c("09:00-11:59", "12:00-14:59") ~ "Midday",
+    Time.Category %in% c("15:00-17:59") ~ "Afternoon Rush",
+    Time.Category %in% c("18:00-20:59", "21:00-23:59") ~ "Evening",
+    TRUE ~ "Other"
+  )) %>%
+  mutate(timeofday = factor(timeofday, 
+                            levels = c("Late Night", "Morning Rush", "Midday", "Afternoon Rush", "Evening")))
+
+# center/standardize latitude and longitude, and center intersection
+
+mean_lat <- mean(crash_weather$Latitude)
+mean_lon <- mean(crash_weather$Longitude)
+
+sd_lat <- sd(crash_weather$Latitude)
+sd_lon <- sd(crash_weather$Longitude)
+
+crash_weather <- crash_weather |>
+  mutate(
+    centered_lat = (Latitude - mean_lat) / sd_lat,
+    centered_lon = (Longitude - mean_lon) / sd_lon,
+    centered_intersection = Intersection.Crash - mean(Intersection.Crash, na.rm=T)
+  )
+
+set.seed(12345)
+
+crash_weather_simple <- crash_weather |>
+  slice_sample(prop = 0.10)
+
+
 dir.create("data", showWarnings = FALSE)
-write.csv(crash_weather, file="data/crash_weather.csv")
+write.csv(crash_weather, file="data/crash_weather_full.csv")
+write.csv(crash_weather_simple, file="data/crash_weather.csv")
